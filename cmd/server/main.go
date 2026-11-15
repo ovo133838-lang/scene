@@ -3,10 +3,13 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ovo133838-lang/scene/internal/auth"
+	"github.com/ovo133838-lang/scene/internal/clock"
+	"github.com/ovo133838-lang/scene/internal/order"
 	"github.com/ovo133838-lang/scene/internal/product"
 	"github.com/ovo133838-lang/scene/internal/store"
 )
@@ -47,6 +50,24 @@ func main() {
 	admin.GET("/products/stock", p.StockHandler)
 	admin.POST("/products/:id/shelf", p.ShelfHandler)
 	admin.PUT("/products/:id", p.UpdateHandler)
+
+	// 订单模块
+	pendingTTL, _ := time.ParseDuration(cfg.Clock.PendingTTL)
+	o := order.New(s, clock.New(), pendingTTL)
+	api.POST("/orders", o.CreateOrderHandler)
+	api.GET("/orders", o.ListHandler)
+	api.GET("/orders/:id", o.GetHandler)
+	api.POST("/orders/:id/cancel", o.CancelHandler)
+
+	// 超时清扫（服务端时间判断，重复关闭不多释放）
+	go func() {
+		for {
+			time.Sleep(time.Second)
+			if n, err := o.SweepExpired(); err == nil && n > 0 {
+				log.Printf("sweep expired: %d orders closed", n)
+			}
+		}
+	}()
 
 	log.Printf("server listening on %s", cfg.Server.Addr)
 	if err := r.Run(cfg.Server.Addr); err != nil {
