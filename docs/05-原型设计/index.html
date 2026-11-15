@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>题目01 电商订单交易系统 — 原型入口</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#f5f6fa; color:#333; }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
+  h1 { font-size:26px; margin-bottom:6px; }
+  .sub { color:#888; font-size:14px; margin-bottom:24px; }
+  .card { background:#fff; border-radius:10px; padding:24px; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  h2 { font-size:18px; margin-bottom:14px; padding-left:10px; border-left:4px solid #ff5000; }
+  .roles { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .role { display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid #eee; border-radius:10px; padding:22px 16px; text-align:center; transition:.2s; }
+  .role:hover { border-color:#ff5000; transform:translateY(-3px); box-shadow:0 6px 16px rgba(255,80,0,.12); }
+  .role .icon { font-size:34px; margin-bottom:10px; }
+  .role .name { font-size:16px; font-weight:600; }
+  .role .desc { font-size:12px; color:#999; margin-top:6px; line-height:1.6; }
+  .scenario { border:1px solid #eee; border-radius:8px; padding:14px 16px; margin-bottom:12px; }
+  .scenario h3 { font-size:15px; margin-bottom:6px; }
+  .scenario h3 b { color:#ff5000; margin-right:6px; }
+  .scenario p { font-size:13px; color:#666; line-height:1.7; }
+  .scenario .path { display:inline-block; margin-top:8px; font-size:12px; background:#fff3ee; color:#ff5000; padding:3px 10px; border-radius:12px; }
+  .note { font-size:13px; color:#b06b2a; background:#fff8f0; border:1px solid #ffd9b3; padding:12px 16px; border-radius:8px; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>题目01 电商订单交易、发货与售前退款系统 · 原型</h1>
+  <div class="sub">岗位来源：北京易博中天｜Golang（短期1-3个月）　|　原型版本 V1.0　|　2026-11-15</div>
+
+  <div class="card">
+    <h2>原型说明</h2>
+    <div class="note">
+      <b>演示数据说明：</b>本原型使用 mock 演示数据，全部页面可点击、可跳转、可切换关键业务状态，用于还原需求文档（PRD）中的角色操作与异常分支，不连接后端与真实支付。<br>
+      <b>操作约定：</b>页内点击按钮会产生真实的状态流转反馈（如"取消订单→已关闭""同意退款→退款处理中"），刷新页面后数据重置为初始演示态。<br>
+      <b>鉴权约定：</b>正式系统所有操作须 JWT 鉴权 + 角色/资源授权，原型中通过"角色入口隔离 + 越权操作提示"示意该约束（见管理端的越权演示）。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>角色入口（点击进入对应端原型）</h2>
+    <div class="roles">
+      <a class="role" href="buyer.html">
+        <div class="icon">🛒</div>
+        <div class="name">买家（用户端）</div>
+        <div class="desc">浏览商品 / 下单 / 支付<br>订单查询 / 取消 / 售前退款</div>
+      </a>
+      <a class="role" href="admin.html?role=operator">
+        <div class="icon">📊</div>
+        <div class="name">运营（管理端）</div>
+        <div class="desc">商品上下架 / 库存看板<br>交易汇总与异常核查</div>
+      </a>
+      <a class="role" href="admin.html?role=warehouse">
+        <div class="icon">📦</div>
+        <div class="name">仓库·商家（管理端）</div>
+        <div class="desc">可发货订单 / 发货登记<br>已发货数据展示</div>
+      </a>
+      <a class="role" href="admin.html?role=service">
+        <div class="icon">🎧</div>
+        <div class="name">客服（管理端）</div>
+        <div class="desc">售前退款审核 / 异常支付<br>迟到支付处理与退款重试</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>五组完整工作场景 · 演示导航</h2>
+
+    <div class="scenario">
+      <h3><b>场景1</b>活动正常成交</h3>
+      <p>运营上架商品 → 买家购买付款 → 仓库发货 → 买家查询运单 → 运营核查收款与库存。</p>
+      <span class="path">演示：管理端-运营「商品管理」上架 → 用户端「购买商品A」→ 模拟支付成功 → 管理端-仓库「发货登记」→ 用户端「查看运单」→ 管理端-运营「交易汇总」</span>
+    </div>
+
+    <div class="scenario">
+      <h3><b>场景2</b>缺货与弃单</h3>
+      <p>商品A 仅剩 5 件，20 个并发下单争抢 → 部分订单未付款关闭 → 其他买家购买释放的商品。</p>
+      <span class="path">演示：用户端多次下单商品A（库存递减）→ 待付款订单「取消/超时」→ 库存恢复可再购；并发抢购在正式系统用压测脚本验证</span>
+    </div>
+
+    <div class="scenario">
+      <h3><b>场景3</b>售前退款</h3>
+      <p>买家付款后申请 → 仓库尝试发货受限 → 客服批准 → 首次退款失败、再次成功 → 订单与数量恢复一致。</p>
+      <span class="path">演示：用户端「申请退款」→ 管理端-仓库该单不可发货 → 客服「同意退款」→「退款失败」→「重试成功」→ 库存恢复</span>
+    </div>
+
+    <div class="scenario">
+      <h3><b>场景4</b>迟到支付</h3>
+      <p>订单先关闭 → 支付成功通知到达 → 客服从异常列表发现 → 发起退款 → 运营确认无重复释放和重复退款。</p>
+      <span class="path">演示：用户端订单超时关闭 → 管理端-客服「异常支付」列表出现该单 → 「发起退款」→ 运营「交易汇总」核对无二次恢复库存</span>
+    </div>
+
+    <div class="scenario">
+      <h3><b>场景5</b>操作竞争与越权</h3>
+      <p>退款申请与发货并发、重复支付和退款通知、越权查看或处理他人订单，均须有明确结果。</p>
+      <span class="path">演示：仓库角色尝试访问客服菜单被拒 → 买家端只能看本人订单；并发冲突在正式系统用行锁/状态机收敛</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

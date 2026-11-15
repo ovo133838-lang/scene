@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后台管理端 · Shop商城</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#f0f2f5; color:#333; }
+  button { cursor:pointer; font-family:inherit; }
+  .layout { display:flex; min-height:100vh; }
+  /* 侧边栏 */
+  .sidebar { width:220px; background:#304156; color:#cfd8e3; flex-shrink:0; }
+  .brand { height:56px; display:flex; align-items:center; padding:0 20px; color:#fff; font-size:16px; font-weight:600; border-bottom:1px solid #263445; }
+  .menu { padding:12px 0; }
+  .menu-item { padding:12px 24px; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:8px; }
+  .menu-item:hover { background:#263445; }
+  .menu-item.active { background:#409eff; color:#fff; }
+  .menu-item .dot { width:6px; height:6px; border-radius:50%; background:#8492a6; }
+  .menu-item.active .dot { background:#fff; }
+  .perm-note { padding:14px 20px; margin-top:20px; border-top:1px solid #263445; font-size:12px; color:#8492a6; line-height:1.8; }
+  /* 主区 */
+  .main { flex:1; display:flex; flex-direction:column; }
+  .topbar { height:56px; background:#fff; display:flex; align-items:center; padding:0 20px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .crumb { font-size:15px; font-weight:600; }
+  .role-switch { margin-left:auto; display:flex; gap:8px; }
+  .rs-btn { padding:7px 16px; border:1px solid #dcdfe6; background:#fff; border-radius:4px; font-size:13px; color:#555; }
+  .rs-btn.active { background:#409eff; color:#fff; border-color:#409eff; }
+  .content { padding:20px; }
+  .card { background:#fff; border-radius:6px; padding:20px; margin-bottom:16px; }
+  .h2 { font-size:15px; font-weight:600; margin-bottom:14px; padding-left:10px; border-left:4px solid #409eff; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { text-align:left; padding:12px 10px; border-bottom:1px solid #ebeef5; }
+  th { color:#909399; font-weight:500; background:#fafafa; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; }
+  .t-pay{background:#fff3e0;color:#ff9800}.t-ship{background:#e8f3ff;color:#409eff}
+  .t-refund{background:#f3e8ff;color:#9c27b0}.t-done{background:#e8f8ee;color:#67c23a}
+  .t-close{background:#f0f0f0;color:#909399}.t-err{background:#ffecec;color:#f56c6c}
+  .t-up{background:#e8f8ee;color:#67c23a}.t-down{background:#f0f0f0;color:#909399}
+  .btn { display:inline-block; padding:5px 12px; border-radius:4px; font-size:12px; border:none; }
+  .btn-blue{background:#409eff;color:#fff}.btn-green{background:#67c23a;color:#fff}
+  .btn-red{background:#f56c6c;color:#fff}.btn-line{background:#fff;color:#606266;border:1px solid #dcdfe6}
+  .btn-gray{background:#f0f0f0;color:#c0c4cc;cursor:not-allowed}
+  .stat { display:flex; gap:16px; margin-bottom:16px; }
+  .stat .box { flex:1; background:#fff; border-radius:6px; padding:18px; }
+  .stat .num { font-size:26px; font-weight:700; }
+  .stat .label { font-size:13px; color:#909399; margin-top:4px; }
+  .tip { font-size:12px; color:#b06b2a; background:#fff8f0; border:1px solid #ffd9b3; padding:8px 12px; border-radius:6px; margin-bottom:14px; line-height:1.7; }
+  .permbar { font-size:12px; color:#333; background:#ecf5ff; border:1px solid #d9ecff; padding:8px 12px; border-radius:6px; margin-bottom:14px; }
+  .toast { position:fixed; top:80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.82); color:#fff; padding:10px 20px; border-radius:6px; font-size:14px; z-index:999; display:none; }
+  /* 弹窗 */
+  .mask { position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:900; }
+  .dialog { background:#fff; border-radius:8px; padding:24px; width:440px; }
+  .dialog h3 { font-size:16px; margin-bottom:16px; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:13px; color:#666; margin-bottom:6px; }
+  .field input,.field textarea,.field select { width:100%; padding:9px 10px; border:1px solid #dcdfe6; border-radius:4px; font-size:14px; font-family:inherit; }
+  .field textarea { height:70px; resize:none; }
+  .dialog .acts { text-align:right; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar">
+    <div class="brand">Shop商城 · 后台</div>
+    <div class="menu" id="menu"></div>
+    <div class="perm-note" id="permNote"></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="crumb" id="crumb">后台管理</div>
+      <div class="role-switch">
+        <button class="rs-btn" id="rs-operator" onclick="switchRole('operator')">运营</button>
+        <button class="rs-btn" id="rs-warehouse" onclick="switchRole('warehouse')">仓库·商家</button>
+        <button class="rs-btn" id="rs-service" onclick="switchRole('service')">客服</button>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+<div class="mask" id="mask" onclick="if(event.target===this)closeDialog()">
+  <div class="dialog" id="dialog"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 角色与菜单（RBAC） =====
+const ROLES = {
+  operator: { name:"运营", menus:[
+    {key:"products",label:"商品管理"},
+    {key:"stock",label:"库存看板"},
+    {key:"summary",label:"交易汇总"}
+  ]},
+  warehouse: { name:"仓库·商家", menus:[
+    {key:"pending",label:"可发货订单"},
+    {key:"shipped",label:"已发货记录"},
+    {key:"data",label:"发货数据"}
+  ]},
+  service: { name:"客服", menus:[
+    {key:"refund",label:"退款审核"},
+    {key:"abnormal",label:"异常支付"},
+    {key:"retry",label:"退款重试"}
+  ]}
+};
+// 越权拦截演示：各角色"无权访问"的资源（正式系统返回 403）
+const FORBIDDEN = {
+  operator: [],
+  warehouse: ["退款审核","异常支付","商品管理"],
+  service: ["商品管理","可发货订单","发货登记"]
+};
+
+// ===== mock 数据（与买家端同源演示数据） =====
+const products = [
+  { id:1, name:"XX 品牌无线蓝牙耳机（标准款）", price:10000, stock:5, status:"在售" },
+  { id:2, name:"YY 便携式蓝牙音箱", price:8000, stock:10, status:"在售" }
+];
+let orders = [
+  { id:"T0120261115001", pid:1, name:"XX 品牌无线蓝牙耳机（标准款）", qty:1, amount:10000, status:"待付款", buyer:"张三", carrier:"", tracking:"" },
+  { id:"T0120261115002", pid:1, name:"XX 品牌无线蓝牙耳机（标准款）", qty:2, amount:20000, status:"待发货", buyer:"张三", carrier:"", tracking:"" },
+  { id:"T0120261115003", pid:2, name:"YY 便携式蓝牙音箱", qty:1, amount:8000, status:"退款申请中", buyer:"李四", carrier:"", tracking:"" },
+  { id:"T0120261115004", pid:1, name:"XX 品牌无线蓝牙耳机（标准款）", qty:1, amount:10000, status:"退款失败", buyer:"张三", carrier:"", tracking:"" },
+  { id:"T0120261115005", pid:2, name:"YY 便携式蓝牙音箱", qty:2, amount:16000, status:"已退款", buyer:"李四", carrier:"", tracking:"" },
+  { id:"T0120261115006", pid:1, name:"XX 品牌无线蓝牙耳机（标准款）", qty:1, amount:10000, status:"已发货", buyer:"张三", carrier:"顺丰速运", tracking:"SF1234567890" },
+  { id:"T0120261115007", pid:1, name:"XX 品牌无线蓝牙耳机（标准款）", qty:1, amount:10000, status:"已关闭", buyer:"王五", carrier:"", tracking:"" },
+  { id:"T0120261115008", pid:1, name:"XX 品牌无线蓝牙耳机（标准款）", qty:1, amount:10000, status:"支付异常", buyer:"王五", carrier:"", tracking:"" }
+];
+const statusTag = { "待付款":"t-pay","待发货":"t-ship","退款申请中":"t-refund","退款处理中":"t-refund",
+  "退款失败":"t-refund","已退款":"t-done","已发货":"t-done","已关闭":"t-close","支付异常":"t-err" };
+const fen2yuan = p => (p/100).toFixed(2);
+let role = "operator";
+
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2200); }
+
+// ===== 渲染框架 =====
+function switchRole(r){ role=r; render(); }
+function render(){
+  const R=ROLES[role];
+  document.getElementById('crumb').textContent = "后台管理 / " + R.name;
+  document.getElementById('menu').innerHTML = R.menus.map(m=>
+    `<div class="menu-item" data-key="${m.key}" onclick="nav('${m.key}')"><span class="dot"></span>${m.label}</div>`).join('');
+  document.getElementById('permNote').innerHTML =
+    `<b>${R.name}</b><br>权限范围：${R.menus.map(m=>m.label).join('、')}` +
+    (FORBIDDEN[role].length ? `<br><br>无权限资源：<span style="color:#ff8b8b">${FORBIDDEN[role].join('、')}</span>（正式系统返回 403）` : "");
+  document.querySelectorAll('.rs-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('rs-'+role).classList.add('active');
+  // 默认打开第一个菜单
+  nav(R.menus[0].key);
+}
+function nav(key){
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.toggle('active', m.dataset.key===key));
+  // 越权拦截演示
+  const R=ROLES[role];
+  const menu=R.menus.find(m=>m.key===key);
+  if(FORBIDDEN[role].includes(menu.label)){ render403(menu.label); return; }
+  const fn = views[key]; fn ? fn() : (document.getElementById('content').innerHTML="");
+}
+
+// ===== 各视图 =====
+const views = {};
+views.products = function(){
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">商品管理（上下架 / 售价 / 可售数量）</div>
+    <div class="tip">已下单订单保存商品与价格快照，后续上下架、改价不改变已有订单金额。</div>
+    <table><tr><th>商品</th><th>单价(分)</th><th>可售数量</th><th>状态</th><th>操作</th></tr>
+    ${products.map(p=>`<tr>
+      <td>${p.name}</td><td>${p.price}（¥${fen2yuan(p.price)}）</td><td>${p.stock}</td>
+      <td><span class="tag ${p.status==='在售'?'t-up':'t-down'}">${p.status}</span></td>
+      <td><button class="btn ${p.status==='在售'?'btn-red':'btn-green'}" onclick="toggleProduct(${p.id})">${p.status==='在售'?'下架':'上架'}</button></td>
+    </tr>`).join('')}</table></div>`;
+};
+views.stock = function(){
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">库存看板</div>
+    <div class="stat">
+      ${products.map(p=>`<div class="box"><div class="num" style="color:#ff5000">${p.stock}</div><div class="label">${p.name} · 当前可售</div></div>`).join('')}
+    </div>
+    <div class="tip">可售数量 = 总库存 − 已占用（待付款/待发货占用）。商品A 本次仅 5 件，用于并发抢购与缺货场景演示。</div></div>`;
+};
+views.summary = function(){
+  const paid = orders.filter(o=>["待发货","已发货","退款申请中","退款失败","已退款","支付异常"].includes(o.status)).reduce((s,o)=>s+o.amount,0);
+  const refunded = orders.filter(o=>o.status==="已退款").reduce((s,o)=>s+o.amount,0);
+  const shipped = orders.filter(o=>o.status==="已发货").length;
+  const abnormal = orders.filter(o=>o.status==="支付异常").length;
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">交易汇总与异常核查</div>
+    <div class="stat">
+      <div class="box"><div class="num" style="color:#409eff">¥${fen2yuan(paid)}</div><div class="label">已收款总额</div></div>
+      <div class="box"><div class="num" style="color:#67c23a">¥${fen2yuan(refunded)}</div><div class="label">已退款总额</div></div>
+      <div class="box"><div class="num">${shipped}</div><div class="label">已发货订单</div></div>
+      <div class="box"><div class="num" style="color:#f56c6c">${abnormal}</div><div class="label">异常支付待处理</div></div>
+    </div>
+    <table><tr><th>订单号</th><th>买家</th><th>金额</th><th>状态</th><th>发货/异常记录</th></tr>
+    ${orders.map(o=>`<tr><td>${o.id}</td><td>${o.buyer}</td><td>¥${fen2yuan(o.amount)}</td>
+      <td><span class="tag ${statusTag[o.status]}">${o.status}</span></td>
+      <td>${o.carrier?`${o.carrier}/${o.tracking}`:(o.status==="支付异常"?"迟到支付·待客服退款":o.status==="退款失败"?"退款失败·待重试":"—")}</td></tr>`).join('')}</table>
+    <div class="tip" style="margin-top:14px">异常记录不可通过直接修改订单状态消失，须走客服退款链路留痕。</div></div>`;
+};
+views.pending = function(){
+  const list=orders.filter(o=>o.status==="待发货");
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">可发货订单（仅合法待发货）</div>
+    ${list.length===0?'<div class="tip">当前无待发货订单。</div>':`
+    <table><tr><th>订单号</th><th>商品</th><th>数量</th><th>买家</th><th>金额</th><th>操作</th></tr>
+    ${list.map(o=>`<tr><td>${o.id}</td><td>${o.name}</td><td>${o.qty}</td><td>${o.buyer}</td><td>¥${fen2yuan(o.amount)}</td>
+      <td><button class="btn btn-blue" onclick="openShip('${o.id}')">发货登记</button></td></tr>`).join('')}</table>`}
+    <div class="tip" style="margin-top:14px">退款申请中的订单暂停发货，不会出现在本列表；已发货订单不可重复登记。</div></div>`;
+};
+views.shipped = function(){
+  const list=orders.filter(o=>o.status==="已发货");
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">已发货记录</div>
+    <table><tr><th>订单号</th><th>商品</th><th>买家</th><th>承运方</th><th>运单号</th></tr>
+    ${list.map(o=>`<tr><td>${o.id}</td><td>${o.name}</td><td>${o.buyer}</td><td>${o.carrier}</td><td>${o.tracking}</td></tr>`).join('')}</table></div>`;
+};
+views.data = function(){
+  const c=document.getElementById('content');
+  const all=orders.length, shipped=orders.filter(o=>o.status==="已发货").length, pending=orders.filter(o=>o.status==="待发货").length;
+  c.innerHTML = `<div class="card"><div class="h2">发货数据（只读展示）</div>
+    <div class="stat">
+      <div class="box"><div class="num">${pending}</div><div class="label">待发货</div></div>
+      <div class="box"><div class="num" style="color:#67c23a">${shipped}</div><div class="label">已发货</div></div>
+      <div class="box"><div class="num">${all}</div><div class="label">订单总数</div></div>
+    </div>
+    <div class="permbar">仓库·商家角色仅拥有发货登记与数据展示权限，无商品管理、退款审核权限。</div></div>`;
+};
+views.refund = function(){
+  const list=orders.filter(o=>o.status==="退款申请中");
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">售前退款审核</div>
+    ${list.length===0?'<div class="tip">当前无待审核退款申请。</div>':`
+    <table><tr><th>订单号</th><th>商品</th><th>买家</th><th>金额</th><th>操作</th></tr>
+    ${list.map(o=>`<tr><td>${o.id}</td><td>${o.name}</td><td>${o.buyer}</td><td>¥${fen2yuan(o.amount)}</td>
+      <td><button class="btn btn-green" onclick="openRefund('${o.id}','同意')">同意</button>
+          <button class="btn btn-red" onclick="openRefund('${o.id}','拒绝')">拒绝</button></td></tr>`).join('')}</table>`}
+    <div class="tip" style="margin-top:14px">客服同意 → 渠道退款；拒绝须填原因，拒绝后恢复可发货。</div></div>`;
+};
+views.abnormal = function(){
+  const list=orders.filter(o=>o.status==="支付异常");
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">异常支付待处理（迟到支付）</div>
+    ${list.length===0?'<div class="tip">当前无异常支付。</div>':`
+    <table><tr><th>订单号</th><th>买家</th><th>金额</th><th>说明</th><th>操作</th></tr>
+    ${list.map(o=>`<tr><td>${o.id}</td><td>${o.buyer}</td><td>¥${fen2yuan(o.amount)}</td>
+      <td>订单超时关闭后收到成功支付，不恢复订单/不重占库存</td>
+      <td><button class="btn btn-blue" onclick="abnormalRefund('${o.id}')">核实并退款</button></td></tr>`).join('')}</table>`}
+    <div class="tip" style="margin-top:14px">迟到支付退款<b>不恢复</b>此前已释放的库存（避免二次释放/重复退款）。</div></div>`;
+};
+views.retry = function(){
+  const list=orders.filter(o=>o.status==="退款失败");
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card"><div class="h2">退款重试（渠道失败待跟进）</div>
+    ${list.length===0?'<div class="tip">当前无退款失败记录。</div>':`
+    <table><tr><th>订单号</th><th>买家</th><th>金额</th><th>操作</th></tr>
+    ${list.map(o=>`<tr><td>${o.id}</td><td>${o.buyer}</td><td>¥${fen2yuan(o.amount)}</td>
+      <td><button class="btn btn-blue" onclick="retryRefund('${o.id}')">重试退款</button></td></tr>`).join('')}</table>`}
+    <div class="tip" style="margin-top:14px">渠道明确失败时保留待处理记录，由客服重试。</div></div>`;
+};
+
+// ===== 操作 =====
+function toggleProduct(pid){
+  const p=products.find(x=>x.id===pid);
+  p.status = p.status==="在售"?"下架":"在售";
+  toast(p.status==="在售"?`商品「${p.name}」已上架`:`商品「${p.name}」已下架（已下单订单金额不受影响）`);
+  views.products();
+}
+function openShip(oid){
+  showDialog(`<h3>发货登记 · ${oid}</h3>
+    <div class="field"><label>承运方</label><input id="d-carrier" placeholder="如：顺丰速运 / 圆通速递"></div>
+    <div class="field"><label>运单号</label><input id="d-tracking" placeholder="填写运单号"></div>
+    <div class="acts"><button class="btn btn-line" onclick="closeDialog()">取消</button>
+    <button class="btn btn-blue" onclick="confirmShip('${oid}')">确认发货</button></div>`);
+}
+function confirmShip(oid){
+  const o=orders.find(x=>x.id===oid);
+  const carrier=document.getElementById('d-carrier').value.trim();
+  const tracking=document.getElementById('d-tracking').value.trim();
+  if(!carrier||!tracking){ toast("请填写承运方与运单号"); return; }
+  if(o.status!=="待发货"){ toast("该订单不可发货（可能已退款/已发货）"); closeDialog(); return; }
+  o.carrier=carrier; o.tracking=tracking; o.status="已发货";
+  closeDialog(); toast("发货登记成功，订单已更新为【已发货】"); views.pending();
+}
+function openRefund(oid, act){
+  showDialog(`<h3>${act}退款 · ${oid}</h3>
+    <div class="field"><label>${act==='同意'?'退款处理说明':'拒绝原因（必填）'}</label>
+    <textarea id="d-reason" placeholder="${act==='同意'?'同意售前退款，恢复库存':'拒绝原因，如：订单已进入发货流程'}"></textarea></div>
+    <div class="acts"><button class="btn btn-line" onclick="closeDialog()">取消</button>
+    <button class="btn ${act==='同意'?'btn-green':'btn-red'}" onclick="confirmRefund('${oid}','${act}')">确认${act}</button></div>`);
+}
+function confirmRefund(oid, act){
+  const o=orders.find(x=>x.id===oid);
+  const reason=document.getElementById('d-reason').value.trim();
+  if(act==="拒绝" && !reason){ toast("拒绝必须填写原因"); return; }
+  if(act==="同意"){ o.status="退款处理中"; closeDialog(); toast("已同意退款，进入渠道退款处理"); views.refund(); }
+  else { o.status="待发货"; closeDialog(); toast("已拒绝退款并记录原因，恢复可发货"); views.refund(); }
+}
+function abnormalRefund(oid){
+  const o=orders.find(x=>x.id===oid);
+  o.status="已退款";
+  toast(`已核实异常支付并退款（不恢复库存，避免二次释放）`);
+  views.abnormal();
+}
+function retryRefund(oid){
+  const o=orders.find(x=>x.id===oid);
+  o.status="已退款";
+  const p=products.find(x=>x.id===o.pid);
+  if(p) p.stock+=o.qty; // 售前退款成功恢复库存
+  toast("退款重试成功，订单已更新为【已退款】，库存已恢复");
+  views.retry();
+}
+function render403(name){
+  const c=document.getElementById('content');
+  c.innerHTML = `<div class="card" style="text-align:center;padding:60px">
+    <div style="font-size:60px;font-weight:700;color:#409eff">403</div>
+    <div style="margin:16px 0;font-size:15px">当前角色「${ROLES[role].name}」无权访问「${name}」</div>
+    <div class="permbar" style="display:inline-block">正式系统由 JWT + RBAC 鉴权拦截，前端隐藏菜单 + 后端接口双重校验。</div>
+  </div>`;
+}
+function showDialog(html){ document.getElementById('dialog').innerHTML=html; document.getElementById('mask').style.display='flex'; }
+function closeDialog(){ document.getElementById('mask').style.display='none'; }
+
+// ===== 越权演示入口 =====
+// 从 URL 参数读取角色，默认运营
+const params = new URLSearchParams(location.search);
+role = params.get('role') || 'operator';
+render();
+</script>
+</body>
+</html>

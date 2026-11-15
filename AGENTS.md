@@ -6,6 +6,7 @@
 
 - 仓库：https://github.com/ovo133838-lang/scene （分支 `main` 仅初始化，开发在 `dev/01`）
 - 技术栈：Go + Gin；MySQL 8.x；Redis 7.x；鉴权 JWT。
+- 用户端：Vue3 + Element Plus，**并入本仓库 `web/` 目录，构建产物经 `go:embed` 打进单二进制**（同源提供页面，不单独建仓库）。管理端独立于 scene-manage 仓库。
 - 本题为题目01：小型电商订单交易、发货与售前退款。业务规则以原始题面与《需求规格说明书》为准。
 
 ## 2. 整体框架结构（不得擅自修改）
@@ -26,9 +27,10 @@ gin/
 │   ├── mockpay/              # 可控回调网关（异常注入，仅教学演示）
 │   ├── store/                # 数据访问层（MySQL/Redis 全部经此处）
 │   └── clock/                # 可配置教学时钟
+├── web/                      # 用户端 Vue3+Element Plus（源码+dist，go:embed 打包）
 ├── migrations/               # 数据库 DDL 与种子数据
 ├── configs/config.toml       # 配置（含支付宝沙箱密钥，.gitignore 不提交）
-├── docs/                     # 01需求 02原型 03任务 04开发 05测试 06验收 07环境 08Skill 09部署
+├── docs/                     # 01需求 02数据字典 03接口文档 04任务 05原型 06开发 07测试 08验收 09环境 10Skill 11部署
 ├── AGENTS.md
 ├── go.mod
 └── .gitignore
