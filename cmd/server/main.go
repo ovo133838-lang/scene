@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/ovo133838-lang/scene/internal/auth"
 	"github.com/ovo133838-lang/scene/internal/store"
 )
 
@@ -23,10 +24,16 @@ func main() {
 	}
 	defer s.Close()
 
+	a := auth.New(s, cfg.JWT.Secret)
+	if err := a.SeedUsers(); err != nil {
+		log.Fatalf("seed users: %v", err)
+	}
+
 	r := gin.Default()
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+	r.POST("/api/login", a.LoginHandler)
 
 	log.Printf("server listening on %s", cfg.Server.Addr)
 	if err := r.Run(cfg.Server.Addr); err != nil {

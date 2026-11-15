@@ -43,6 +43,9 @@ type Config struct {
 	Clock struct {
 		PendingTTL string
 	}
+	JWT struct {
+		Secret string
+	}
 }
 
 // Store 聚合数据库与缓存连接。

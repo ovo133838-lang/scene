@@ -27,3 +27,7 @@ alipay_public_key = "" # 在 config.local.toml 覆盖
 [clock]
 # 待付款超时时长（教学演示可缩短，测试与演示同规则）
 pending_ttl = "10m"
+
+[jwt]
+# JWT 签名密钥（教学演示值，生产须更换）
+secret = "demo-secret-change-me"
