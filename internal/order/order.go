@@ -117,7 +117,7 @@ func (s *Service) Cancel(orderID string, buyerID int64) error {
 		return errors.New("当前状态不可取消")
 	}
 
-	if err := s.transition(tx, orderID, StatusPendingPayment, StatusClosed); err != nil {
+	if err := s.Transition(tx, orderID, StatusPendingPayment, StatusClosed); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`UPDATE product SET stock = stock + ? WHERE id = ?`, qty, pid); err != nil {
@@ -199,7 +199,7 @@ func (s *Service) Expire(orderID string) error {
 	if status != StatusPendingPayment {
 		return nil // 已关闭/已支付等，幂等无需处理
 	}
-	if err := s.transition(tx, orderID, StatusPendingPayment, StatusClosed); err != nil {
+	if err := s.Transition(tx, orderID, StatusPendingPayment, StatusClosed); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`UPDATE product SET stock = stock + ? WHERE id = ?`, qty, pid); err != nil {

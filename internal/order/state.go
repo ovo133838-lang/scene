@@ -39,8 +39,9 @@ func canTransition(from, to string) bool {
 	return false
 }
 
-// transition 在事务内以守卫 UPDATE 原子完成状态迁移，非法迁移返回错误。
-func (s *Service) transition(tx *sql.Tx, orderID, from, to string) error {
+// Transition 在事务内以守卫 UPDATE 原子完成状态迁移，非法迁移返回错误。
+// 导出供其他域（refund/shipment）在同一事务内复用，状态机仍集中在本包。
+func (s *Service) Transition(tx *sql.Tx, orderID, from, to string) error {
 	if !canTransition(from, to) {
 		return fmt.Errorf("非法状态迁移 %s -> %s", from, to)
 	}

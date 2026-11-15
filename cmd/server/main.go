@@ -13,6 +13,7 @@ import (
 	"github.com/ovo133838-lang/scene/internal/order"
 	"github.com/ovo133838-lang/scene/internal/payment"
 	"github.com/ovo133838-lang/scene/internal/product"
+	"github.com/ovo133838-lang/scene/internal/refund"
 	"github.com/ovo133838-lang/scene/internal/store"
 )
 
@@ -70,6 +71,17 @@ func main() {
 	mock := mockpay.New(o, pay)
 	payAdmin := r.Group("/api/admin/pay", a.Middleware(), a.RequireRole("operator", "service"))
 	payAdmin.POST("/mock-notify", mock.MockNotifyHandler)
+
+	// 退款模块（申请 + 客服审核/重试/迟到支付退款）
+	ref := refund.New(s, o, cfg)
+	api.POST("/orders/:id/refund", ref.ApplyRefundHandler)
+	svcAdmin := r.Group("/api/admin", a.Middleware(), a.RequireRole("service"))
+	svcAdmin.GET("/refunds/pending", ref.ListPendingRefundsHandler)
+	svcAdmin.POST("/refunds/:id/approve", ref.ApproveRefundHandler)
+	svcAdmin.POST("/refunds/:id/reject", ref.RejectRefundHandler)
+	svcAdmin.POST("/refunds/:id/retry", ref.RetryRefundHandler)
+	svcAdmin.GET("/pay-abnormal", ref.ListAbnormalHandler)
+	svcAdmin.POST("/pay-abnormal/:id/refund", ref.RefundLatePaymentHandler)
 
 	// 超时清扫（服务端时间判断，重复关闭不多释放）
 	go func() {

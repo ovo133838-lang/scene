@@ -43,6 +43,9 @@ type Config struct {
 	Clock struct {
 		PendingTTL string
 	}
+	Refund struct {
+		FailFirstAttempt bool
+	}
 	JWT struct {
 		Secret string
 	}

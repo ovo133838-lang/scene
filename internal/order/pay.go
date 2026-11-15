@@ -52,7 +52,7 @@ func (s *Service) MarkPaid(orderID, channelTxnNo string, amount int64) error {
 
 	switch status {
 	case StatusPendingPayment:
-		if err := s.transition(tx, orderID, StatusPendingPayment, StatusPaid); err != nil {
+		if err := s.Transition(tx, orderID, StatusPendingPayment, StatusPaid); err != nil {
 			return err
 		}
 	case StatusPaid, StatusPaymentAbnormal:
@@ -96,7 +96,7 @@ func (s *Service) MarkPaymentAbnormal(orderID, channelTxnNo string, amount int64
 	default:
 		return ErrInvalidState
 	}
-	if err := s.transition(tx, orderID, StatusClosed, StatusPaymentAbnormal); err != nil {
+	if err := s.Transition(tx, orderID, StatusClosed, StatusPaymentAbnormal); err != nil {
 		return err
 	}
 	if _, err := tx.Exec("INSERT INTO payment_abnormal (order_id, channel_txn_no, amount, status, reason) VALUES (?,?,?,'pending','late_payment')", orderID, channelTxnNo, amount); err != nil {
