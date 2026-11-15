@@ -9,7 +9,9 @@ import (
 
 	"github.com/ovo133838-lang/scene/internal/auth"
 	"github.com/ovo133838-lang/scene/internal/clock"
+	"github.com/ovo133838-lang/scene/internal/mockpay"
 	"github.com/ovo133838-lang/scene/internal/order"
+	"github.com/ovo133838-lang/scene/internal/payment"
 	"github.com/ovo133838-lang/scene/internal/product"
 	"github.com/ovo133838-lang/scene/internal/store"
 )
@@ -58,6 +60,16 @@ func main() {
 	api.GET("/orders", o.ListHandler)
 	api.GET("/orders/:id", o.GetHandler)
 	api.POST("/orders/:id/cancel", o.CancelHandler)
+
+	// 支付模块（发起 + 真实异步通知）
+	pay := payment.New(o, cfg)
+	api.POST("/orders/:id/pay", pay.PayHandler)
+	r.POST("/pay/notify", pay.NotifyHandler)
+
+	// 可控回调网关（运营/客服，异常注入）
+	mock := mockpay.New(o, pay)
+	payAdmin := r.Group("/api/admin/pay", a.Middleware(), a.RequireRole("operator", "service"))
+	payAdmin.POST("/mock-notify", mock.MockNotifyHandler)
 
 	// 超时清扫（服务端时间判断，重复关闭不多释放）
 	go func() {

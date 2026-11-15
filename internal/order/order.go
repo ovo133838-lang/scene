@@ -177,6 +177,40 @@ func (s *Service) SweepExpired() (int, error) {
 	return n, nil
 }
 
+// Expire 模拟超时关闭：将待付款订单关闭并释放库存（守卫幂等，只关一次）。
+// 供可控回调网关演示「迟到支付」时主动关闭订单；生产流程由 SweepExpired 触发。
+func (s *Service) Expire(orderID string) error {
+	tx, err := s.store.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var pid int64
+	var qty int
+	var status string
+	err = tx.QueryRow("SELECT product_id, quantity, status FROM `order` WHERE id = ? FOR UPDATE", orderID).Scan(&pid, &qty, &status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrUnknownOrder
+	}
+	if err != nil {
+		return err
+	}
+	if status != StatusPendingPayment {
+		return nil // 已关闭/已支付等，幂等无需处理
+	}
+	if err := s.transition(tx, orderID, StatusPendingPayment, StatusClosed); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`UPDATE product SET stock = stock + ? WHERE id = ?`, qty, pid); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`INSERT INTO order_event (order_id, event) VALUES (?, 'timeout_closed')`, orderID); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 func (s *Service) closeExpired(it struct {
 	id  string
 	pid int64
