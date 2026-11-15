@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ovo133838-lang/scene/internal/auth"
+	"github.com/ovo133838-lang/scene/internal/product"
 	"github.com/ovo133838-lang/scene/internal/store"
 )
 
@@ -34,6 +35,18 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 	r.POST("/api/login", a.LoginHandler)
+
+	// 商品模块
+	p := product.New(s)
+	api := r.Group("/api", a.Middleware())
+	api.GET("/products", p.ListOnSaleHandler)
+	api.GET("/products/:id", p.GetHandler)
+
+	admin := r.Group("/api/admin", a.Middleware(), a.RequireRole("operator"))
+	admin.GET("/products", p.ListAllHandler)
+	admin.GET("/products/stock", p.StockHandler)
+	admin.POST("/products/:id/shelf", p.ShelfHandler)
+	admin.PUT("/products/:id", p.UpdateHandler)
 
 	log.Printf("server listening on %s", cfg.Server.Addr)
 	if err := r.Run(cfg.Server.Addr); err != nil {
