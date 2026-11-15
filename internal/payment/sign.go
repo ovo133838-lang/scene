@@ -35,45 +35,53 @@ func signSource(m map[string]string) string {
 	return b.String()
 }
 
-// normalizePEM 归一化密钥字符串：还原被转义的换行，去除首尾空白。
-// 约定 config 中存完整 PEM（含 BEGIN/END 头尾）。
-func normalizePEM(s string) string {
-	s = strings.ReplaceAll(s, `\n`, "\n")
-	return strings.TrimSpace(s)
+// keyDER 提取密钥 DER 字节：支持完整 PEM（含 BEGIN/END）与裸 base64（支付宝密钥工具格式）。
+func keyDER(pemStr string) ([]byte, error) {
+	s := strings.ReplaceAll(pemStr, `\n`, "\n")
+	s = strings.TrimSpace(s)
+	if strings.Contains(s, "-----BEGIN") {
+		block, _ := pem.Decode([]byte(s))
+		if block == nil {
+			return nil, errors.New("密钥 PEM 解析失败")
+		}
+		return block.Bytes, nil
+	}
+	// 裸 base64（可能含换行/空白），去空白后解码
+	return base64.StdEncoding.DecodeString(strings.Join(strings.Fields(s), ""))
 }
 
 func parseRSAPrivateKey(pemStr string) (*rsa.PrivateKey, error) {
-	block, _ := pem.Decode([]byte(normalizePEM(pemStr)))
-	if block == nil {
-		return nil, errors.New("私钥 PEM 解析失败")
+	der, err := keyDER(pemStr)
+	if err != nil {
+		return nil, err
 	}
-	if k, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+	if k, err := x509.ParsePKCS8PrivateKey(der); err == nil {
 		if rk, ok := k.(*rsa.PrivateKey); ok {
 			return rk, nil
 		}
 		return nil, errors.New("私钥不是 RSA 类型")
 	}
-	if k, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+	if k, err := x509.ParsePKCS1PrivateKey(der); err == nil {
 		return k, nil
 	}
-	return nil, errors.New("私钥解析失败（须为 PKCS1/PKCS8 PEM）")
+	return nil, errors.New("私钥解析失败（须为 PKCS1/PKCS8）")
 }
 
 func parseRSAPublicKey(pemStr string) (*rsa.PublicKey, error) {
-	block, _ := pem.Decode([]byte(normalizePEM(pemStr)))
-	if block == nil {
-		return nil, errors.New("公钥 PEM 解析失败")
+	der, err := keyDER(pemStr)
+	if err != nil {
+		return nil, err
 	}
-	if k, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
+	if k, err := x509.ParsePKIXPublicKey(der); err == nil {
 		if rk, ok := k.(*rsa.PublicKey); ok {
 			return rk, nil
 		}
 		return nil, errors.New("公钥不是 RSA 类型")
 	}
-	if k, err := x509.ParsePKCS1PublicKey(block.Bytes); err == nil {
+	if k, err := x509.ParsePKCS1PublicKey(der); err == nil {
 		return k, nil
 	}
-	return nil, errors.New("公钥解析失败（须为 PKIX/PKCS1 PEM）")
+	return nil, errors.New("公钥解析失败（须为 PKIX/PKCS1）")
 }
 
 // signRSA2 使用商户私钥对源串做 SHA256withRSA 签名。
