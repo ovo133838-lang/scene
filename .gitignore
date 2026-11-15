@@ -1,11 +1,19 @@
-vendor/*
-!vendor/vendor.json
+# 本地敏感配置（含密钥，不入库）
+configs/config.local.toml
+
+# 依赖
+vendor/
+
+# 构建产物
+*.exe
+bin/
 coverage.out
 count.out
-test
-profile.out
 tmp.out
 
-# Develop tools
+# 日志
+*.log
+
+# IDE
 .idea/
 .vscode/
